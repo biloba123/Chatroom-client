@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:paddingStart="@dimen/card_spacing"
+    android:paddingEnd="@dimen/card_spacing"
+    android:paddingTop="@dimen/medium_spacing"
+    android:paddingBottom="@dimen/medium_spacing"
+    android:orientation="horizontal">
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:orientation="vertical"
+        android:gravity="end"
+        android:paddingStart="@dimen/small_spacing">
+        <TextView
+            android:id="@+id/tv_name"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:maxLines="1"
+            android:textColor="@color/text_default_dark"
+            android:textSize="@dimen/sub_medium_text"
+            tools:text="biloba"/>
+        <TextView
+            android:id="@+id/tv_msg"
+            android:layout_marginTop="@dimen/small_spacing"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textSize="@dimen/medium_text"
+            android:textColor="@color/text_default_dark"
+            android:background="@drawable/bg_msg_send"
+            tools:text="I am a superman! I am a superman!"/>
+    </LinearLayout>
+
+    <ImageView
+        android:id="@+id/iv_head"
+        android:layout_width="@dimen/icon_middle"
+        android:layout_height="@dimen/icon_sub_big"
+        tools:src="@mipmap/head_01"/>
+
+
+</LinearLayout>
