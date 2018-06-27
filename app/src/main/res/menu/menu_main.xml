@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+      xmlns:app="http://schemas.android.com/apk/res-auto">
+    <item android:id="@+id/item_online"
+          android:icon="@drawable/ic_people_online"
+          android:title="@string/online_people"
+          app:showAsAction="always"/>
+    <item android:id="@+id/item_exit"
+          android:icon="@drawable/ic_exit"
+          android:title="@string/exit"
+          app:showAsAction="always"/>
+</menu>

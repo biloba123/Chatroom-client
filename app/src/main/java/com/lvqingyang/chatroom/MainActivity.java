@@ -5,15 +5,19 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
+import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
+import android.view.Gravity;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.EditText;
 
-import com.lvqingyang.chatroom.bean.Message;
+import com.lvqingyang.chatroom.bean.MyMessage;
 import com.lvqingyang.chatroom.bean.User;
 import com.lvqingyang.chatroom.i.StateListener;
 import com.lvqingyang.chatroom.tool.MyPrefence;
@@ -23,17 +27,20 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class MainActivity extends AppCompatActivity {
-    private ClientSocket mClientSocket;
-    private static final String HOST = "192.168.1.105";//服务器地址
+    private static final String HOST = "47.106.169.85";//服务器地址
     private static final int PORT = 6666;//连接端口号
     private static final String TAG = "MainActivity";
+    private ClientSocket mClientSocket;
     private android.support.v7.widget.RecyclerView rvmsg;
     private android.widget.EditText etmsg;
     private android.support.design.widget.FloatingActionButton fabsend;
     private MyPrefence mPrefence;
     private User mUser;
-    private List<Message> mMessages=new ArrayList<>();
-    private SolidRVBaseAdapter<Message> mAdapter;
+    private List<MyMessage> mMessages = new ArrayList<>();
+    private SolidRVBaseAdapter<MyMessage> mAdapter;
+    private RecyclerView rvonline;
+    private SolidRVBaseAdapter<User> mOnlineAdapter;
+    private android.support.v4.widget.DrawerLayout dl;
 
     public static Intent newIntent(Context context) {
         Intent starter = new Intent(context, MainActivity.class);
@@ -45,12 +52,13 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        initeView();
 
-        mPrefence=MyPrefence.getInstance(this);
-        mUser=mPrefence.getUser(User.class);
-        mClientSocket=new ClientSocket(HOST, PORT, mUser);
+        mPrefence = MyPrefence.getInstance(this);
+        mUser = mPrefence.getUser(User.class);
+        mClientSocket = new ClientSocket(HOST, PORT, new User(mUser.getId(), mUser.getUsername()));
         mClientSocket.connect();
+
+        initeView();
 
         mClientSocket.setMessageListener(new StateListener() {
             @Override
@@ -64,14 +72,21 @@ public class MainActivity extends AppCompatActivity {
             }
 
             @Override
-            public void receiveMessage(Message msg) {
-                if (BuildConfig.DEBUG) Log.d(TAG, "receiveMessage: "+msg);
+            public void receiveMessage(MyMessage msg) {
+                if (BuildConfig.DEBUG) Log.d(TAG, "receiveMessage: " + msg);
                 mAdapter.addItem(msg);
+            }
+
+            @Override
+            public void onlineChange() {
+                if (BuildConfig.DEBUG) Log.d(TAG, "onlineChange: " + mClientSocket.getUserList());
+                mOnlineAdapter.notifyDataSetChanged();
             }
 
             @Override
             public void close() {
                 if (BuildConfig.DEBUG) Log.d(TAG, "close: ");
+                finish();
             }
         });
     }
@@ -80,20 +95,22 @@ public class MainActivity extends AppCompatActivity {
         this.fabsend = (FloatingActionButton) findViewById(R.id.fab_send);
         this.etmsg = (EditText) findViewById(R.id.et_msg);
         this.rvmsg = (RecyclerView) findViewById(R.id.rv_msg);
+        this.dl = (DrawerLayout) findViewById(R.id.dl);
+        this.rvonline = (RecyclerView) findViewById(R.id.rv_online);
 
-        mAdapter=new SolidRVBaseAdapter<Message>(this, mMessages) {
+        mAdapter = new SolidRVBaseAdapter<MyMessage>(this, mMessages) {
             @Override
-            protected void onBindDataToView(SolidCommonViewHolder holder, Message bean) {
+            protected void onBindDataToView(SolidCommonViewHolder holder, MyMessage bean) {
                 switch (bean.getType()) {
-                    case Message.TYPE_ARRVIDE:
-                        holder.setText(R.id.tv_hint, bean.getUsername()+"进入聊天室");
+                    case MyMessage.TYPE_ARRVIDE:
+                        holder.setText(R.id.tv_hint, bean.getUsername() + "进入聊天室");
                         break;
-                    case Message.TYPE_EXIT:
-                        holder.setText(R.id.tv_hint, bean.getUsername()+"离开聊天室");
+                    case MyMessage.TYPE_EXIT:
+                        holder.setText(R.id.tv_hint, bean.getUsername() + "离开聊天室");
                         break;
-                    case Message.TYPE_MSG_RECEIVE:
-                    case Message.TYPE_MSG_SEND:
-                        holder.setImage(R.id.iv_head, Data.IDS_HEAD[bean.getUserId()%Data.COUNT_HEAD]);
+                    case MyMessage.TYPE_MSG_RECEIVE:
+                    case MyMessage.TYPE_MSG_SEND:
+                        holder.setImage(R.id.iv_head, Data.IDS_HEAD[bean.getUserId() % Data.COUNT_HEAD]);
                         holder.setText(R.id.tv_name, bean.getUsername());
                         holder.setText(R.id.tv_msg, bean.getContent());
                         break;
@@ -104,12 +121,12 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public int getItemLayoutID(int viewType) {
                 switch (viewType) {
-                    case Message.TYPE_ARRVIDE:
-                    case Message.TYPE_EXIT:
+                    case MyMessage.TYPE_ARRVIDE:
+                    case MyMessage.TYPE_EXIT:
                         return R.layout.item_msg_hint;
-                    case Message.TYPE_MSG_RECEIVE:
+                    case MyMessage.TYPE_MSG_RECEIVE:
                         return R.layout.item_msg_left;
-                    case Message.TYPE_MSG_SEND:
+                    case MyMessage.TYPE_MSG_SEND:
                         return R.layout.item_msg_right;
                     default:
                         return 0;
@@ -118,16 +135,16 @@ public class MainActivity extends AppCompatActivity {
 
             @Override
             public int getItemViewType(int position) {
-                if (mBeans.size()>position) {
-                    Message message=mBeans.get(position);
-                    if (message.getType()== Message.TYPE_MSG) {
-                        if (message.getUserId()==mUser.getId()) {
-                            message.setType(Message.TYPE_MSG_SEND);
-                        }else {
-                            message.setType(Message.TYPE_MSG_RECEIVE);
+                if (mBeans.size() > position) {
+                    MyMessage myMessage = mBeans.get(position);
+                    if (myMessage.getType() == MyMessage.TYPE_MSG) {
+                        if (myMessage.getUserId() == mUser.getId()) {
+                            myMessage.setType(MyMessage.TYPE_MSG_SEND);
+                        } else {
+                            myMessage.setType(MyMessage.TYPE_MSG_RECEIVE);
                         }
                     }
-                    return message.getType();
+                    return myMessage.getType();
                 }
                 return super.getItemViewType(position);
             }
@@ -135,10 +152,25 @@ public class MainActivity extends AppCompatActivity {
         rvmsg.setLayoutManager(new LinearLayoutManager(this));
         rvmsg.setAdapter(mAdapter);
 
+        mOnlineAdapter=new SolidRVBaseAdapter<User>(this, mClientSocket.getUserList()) {
+            @Override
+            protected void onBindDataToView(SolidCommonViewHolder holder, User bean) {
+                holder.setImage(R.id.iv_head, Data.IDS_HEAD[bean.getId() % Data.COUNT_HEAD]);
+                holder.setText(R.id.tv_name, bean.getUsername());
+            }
+
+            @Override
+            public int getItemLayoutID(int viewType) {
+                return R.layout.item_online;
+            }
+        };
+        rvonline.setLayoutManager(new LinearLayoutManager(this));
+        rvonline.setAdapter(mOnlineAdapter);
+
         fabsend.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                String msg=etmsg.getText().toString();
+                String msg = etmsg.getText().toString();
                 if (!msg.isEmpty()) {
                     etmsg.setText("");
                     mClientSocket.sendMessage(msg);
@@ -163,6 +195,40 @@ public class MainActivity extends AppCompatActivity {
                         finish();
                     }
                 })
+                .setCancelable(false)
                 .show();
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.menu_main, menu);
+        return super.onCreateOptionsMenu(menu);
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        switch (item.getItemId()) {
+            case R.id.item_exit:
+                exitApp();
+                return true;
+            case R.id.item_online:
+                if (dl.isDrawerOpen(Gravity.END)) {
+                    dl.closeDrawer(Gravity.END);
+                } else {
+                    dl.openDrawer(Gravity.END);
+                }
+                break;
+            default:
+        }
+        return super.onOptionsItemSelected(item);
+    }
+
+    private void exitApp() {
+        mClientSocket.disconnect();
+    }
+
+    @Override
+    public void onBackPressed() {
+        exitApp();
     }
 }

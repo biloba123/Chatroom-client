@@ -1,6 +1,6 @@
 package com.lvqingyang.chatroom.i;
 
-import com.lvqingyang.chatroom.bean.Message;
+import com.lvqingyang.chatroom.bean.MyMessage;
 
 /**
  * @author Lv Qingyang
@@ -16,7 +16,9 @@ public interface StateListener {
 
     void connectFail();
 
-    void receiveMessage(Message msg);
+    void receiveMessage(MyMessage msg);
+
+    void onlineChange();
 
     void close();
 }

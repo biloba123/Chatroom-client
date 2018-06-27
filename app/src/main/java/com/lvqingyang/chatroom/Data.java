@@ -14,11 +14,14 @@ public final class Data {
 
     public static final int[] IDS_HEAD={
             R.mipmap.head_01,
-            R.mipmap.head_02,
             R.mipmap.head_03,
-            R.mipmap.head_04,
-            R.mipmap.head_05,
             R.mipmap.head_06,
+            R.mipmap.head_04,
+            R.mipmap.head_14,
+            R.mipmap.head_15,
+            R.mipmap.head_16,
+            R.mipmap.head_02,
+            R.mipmap.head_05,
             R.mipmap.head_07,
             R.mipmap.head_08,
             R.mipmap.head_09,
@@ -26,9 +29,6 @@ public final class Data {
             R.mipmap.head_11,
             R.mipmap.head_12,
             R.mipmap.head_13,
-            R.mipmap.head_14,
-            R.mipmap.head_15,
-            R.mipmap.head_16,
     };
     public static final int COUNT_HEAD=IDS_HEAD.length;
 }
